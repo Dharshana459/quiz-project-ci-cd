@@ -1,0 +1,42 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo "Installing security scanning tools..."
+      - wget https://github.com/aquasecurity/trivy/releases/download/v0.45.1/trivy_0.45.1_Linux-64bit.tar.gz
+      - tar zxvf trivy_0.45.1_Linux-64bit.tar.gz
+      - mv trivy /usr/local/bin/
+
+  pre_build:
+    commands:
+      - echo "Logging in to Amazon ECR..."
+      - aws --version
+      # - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
+      - REPOSITORY_URI=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+
+  build:
+    commands:
+      - echo "Building Backend Docker image..."
+      - docker build -t $REPOSITORY_URI/quiz-backend:latest ./backend
+      - echo "Building Frontend Docker image..."
+      - docker build -t $REPOSITORY_URI/quiz-frontend:latest ./frontend
+
+  post_build:
+    commands:
+      - echo "Running security scans with Trivy..."
+      - trivy image --severity HIGH,CRITICAL $REPOSITORY_URI/quiz-backend:latest
+      - trivy image --severity HIGH,CRITICAL $REPOSITORY_URI/quiz-frontend:latest
+      - echo "Security scan complete."
+      - echo "Pushing Docker images to ECR..."
+      # - docker push $REPOSITORY_URI/quiz-backend:latest
+      # - docker push $REPOSITORY_URI/quiz-frontend:latest
+      - echo "Build completed on `date`"
+
+artifacts:
+  files:
+    - '**/*'
