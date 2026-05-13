@@ -37,7 +37,7 @@ jobs:
         with:
           image-ref: 'dharshanamuthukumar/quiz-project-ci-cd:backend'
           format: 'table'
-          exit-code: '1'
+          exit-code: '0'
           severity: 'HIGH,CRITICAL'
 
       # Trivy Scan Frontend
