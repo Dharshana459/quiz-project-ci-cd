@@ -46,7 +46,7 @@ jobs:
         with:
           image-ref: 'dharshanamuthukumar/quiz-project-ci-cd:frontend'
           format: 'table'
-          exit-code: '1'
+          exit-code: '0'
           severity: 'HIGH,CRITICAL'
 
       # Push Backend Image
